@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriScan - AI Food Detection & Nutrition Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            padding: 0.8rem 2rem;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 1.8rem;
+            font-weight: 800;
+            text-align: center;
+            letter-spacing: -0.5px;
+        }
+        
+        .header .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-top: 0.3rem;
+            font-weight: 500;
+        }
+        
+        .nutrition-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        
+        .main-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            min-height: calc(100vh - 100px);
+        }
+        
+        .upload-section {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: linear-gradient(135deg, #f0f2ff 0%, #e8ebff 100%);
+            transform: translateY(-2px);
+        }
+        
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: linear-gradient(135deg, #e8ebff 0%, #e0e4ff 100%);
+        }
+        
+        .upload-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.8rem;
+            color: #667eea;
+        }
+        
+        .glycemic-index {
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 0.8rem;
+            margin: 0.5rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .gi-value {
+            background: #4caf50;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        
+        .gi-category {
+            font-size: 0.8rem;
+            color: #2e7d32;
+            font-weight: 600;
+        }
+        
+        .nutrition-info {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 12px;
+            padding: 1.2rem;
+            margin-top: 1rem;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .nutrition-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .nutrition-item {
+            text-align: center;
+            padding: 0.8rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+        
+        .nutrition-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        
+        .nutrition-label {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-top: 0.3rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .upload-text {
+            font-size: 1.1rem;
+            color: #2c3e50;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .results-section {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.2);
+            display: none;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .image-container {
+            text-align: center;
+        }
+        
+        .image-container h3 {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .image-container img {
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .image-container img:hover {
+            transform: scale(1.02);
+        }
+        
+        .detection-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 12px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            border-left: 3px solid #667eea;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .detection-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.7rem 1rem;
+            background: white;
+            border-radius: 8px;
+            margin: 0.4rem 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: all 0.2s ease;
+        }
+        
+        .detection-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .food-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1rem;
+        }
+        
+        .confidence {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            min-width: 50px;
+            text-align: center;
+        }
+        
+        .ingredients-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 12px;
+            padding: 1.2rem;
+            margin-top: 1rem;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .ingredients-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .ingredient-item {
+            display: flex;
+            align-items: center;
+            padding: 0.6rem 0.8rem;
+            margin: 0.4rem 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            transition: all 0.2s ease;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .ingredient-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .ingredient-quantity {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            color: #1976d2;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+            min-width: 45px;
+            text-align: center;
+            margin-right: 8px;
+            font-size: 0.85rem;
+        }
+        
+        .ingredient-unit {
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+            color: #7b1fa2;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-right: 8px;
+            min-width: 35px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .ingredient-name {
+            flex: 1;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .quantity-input {
+            width: 50px;
+            padding: 4px 6px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            text-align: center;
+            margin-right: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .edit-btn {
+            background: #ff9800;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: auto;
+        }
+        
+        .save-btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-right: 5px;
+        }
+        
+        .cancel-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        
+        .loading {
+            text-align: center;
+            display: none;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+            
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>NutriScan</h1>
+        <div class="subtitle">AI-Powered Food Detection & Nutrition Analysis</div>
+    </div>
+    
+    <div class="main-container">
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📷</div>
+                <div class="upload-text">Upload Food Image</div>
+                <p style="color: #666; margin-bottom: 1.5rem;">Drag & drop or click to select</p>
+                <button class="upload-btn" onclick="document.getElementById('imageInput').click()">
+                    Choose Image
+                </button>
+                <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
+            </div>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analyzing food...</p>
+            </div>
+            
+            <div class="error" id="error"></div>
+        </div>
+        
+        <div class="results-section" id="resultsSection">
+            <div class="results-grid">
+                <div class="image-container">
+                    <h3>Original Image</h3>
+                    <img id="originalImage" src="" alt="Original">
+                </div>
+                <div class="image-container">
+                    <h3>AI Detection</h3>
+                    <img id="annotatedImage" src="" alt="Detected">
+                </div>
+            </div>
+            
+            <div class="detection-card">
+                <h3 style="margin-bottom: 1rem; color: #2c3e50; font-size: 1rem; font-weight: 700;">Detected Foods</h3>
+                <div id="detections"></div>
+            </div>
+            
+            <div class="nutrition-info" id="nutritionSection">
+                <div class="ingredients-title">Nutritional Analysis</div>
+                <div id="nutritionData"></div>
+            </div>
+            
+            <div class="ingredients-section" id="ingredientsSection">
+                <div class="ingredients-title">Ingredients & Quantities</div>
+                <div id="ingredients"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const imageInput = document.getElementById('imageInput');
+        const loading = document.getElementById('loading');
+        const resultsSection = document.getElementById('resultsSection');
+        const error = document.getElementById('error');
+
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showError('Please select a valid image file.');
+                return;
+            }
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('originalImage').src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+
+            // Upload and detect
+            uploadAndDetect(file);
+        }
+
+        function uploadAndDetect(file) {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            loading.style.display = 'block';
+            resultsSection.style.display = 'none';
+            error.style.display = 'none';
+
+            fetch('/detect', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none';
+                
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+
+                displayResults(data);
+            })
+            .catch(err => {
+                loading.style.display = 'none';
+                showError('Error processing image: ' + err.message);
+            });
+        }
+
+        function displayResults(data) {
+            resultsSection.style.display = 'block';
+            
+            // Show annotated image
+            document.getElementById('annotatedImage').src = 'data:image/jpeg;base64,' + data.annotated_image;
+            
+            // Show detections
+            const detectionsHtml = data.detections.map(detection => `
+                <div class="detection-item">
+                    <span class="food-name">${detection.class}</span>
+                    <span class="confidence">${Math.round(detection.confidence * 100)}%</span>
+                </div>
+            `).join('');
+            
+            document.getElementById('detections').innerHTML = detectionsHtml || '<p>No food items detected.</p>';
+            
+            // Show nutrition data
+            displayNutritionData(data.detections);
+            
+            // Show ingredients if available
+            if (data.ingredients && data.ingredients.length > 0) {
+                displayIngredients(data.ingredients);
+            } else {
+                document.getElementById('ingredientsSection').style.display = 'none';
+            }
+        }
+        
+        function displayNutritionData(detections) {
+            const nutritionSection = document.getElementById('nutritionSection');
+            const nutritionContainer = document.getElementById('nutritionData');
+            
+            if (!detections || detections.length === 0) {
+                nutritionSection.style.display = 'none';
+                return;
+            }
+            
+            // Glycemic Index data for different foods
+            const giData = {
+                'apple': { gi: 36, category: 'Low GI' },
+                'banana': { gi: 51, category: 'Low GI' },
+                'rice': { gi: 73, category: 'High GI' },
+                'pizza': { gi: 60, category: 'Medium GI' },
+                'burger': { gi: 66, category: 'High GI' },
+                'fries': { gi: 75, category: 'High GI' },
+                'chapathi': { gi: 52, category: 'Low GI' },
+                'idli': { gi: 39, category: 'Low GI' },
+                'chicken gravy': { gi: 45, category: 'Low GI' },
+                'soda': { gi: 63, category: 'High GI' },
+                'tomato': { gi: 15, category: 'Low GI' },
+                'vada': { gi: 85, category: 'High GI' }
+            };
+            
+            // Calculate total nutrition with quantity adjustments
+            let totalCalories = 0;
+            let totalCarbs = 0;
+            let totalProtein = 0;
+            let totalFat = 0;
+            let avgGI = 0;
+            let giCount = 0;
+            
+            detections.forEach(detection => {
+                const food = detection.class.toLowerCase();
+                const nutrition = getNutritionData(food);
+                const gi = giData[food];
+                
+                // Get quantity multiplier from ingredients if available
+                const quantityMultiplier = getQuantityMultiplier(food);
+                
+                totalCalories += nutrition.calories * quantityMultiplier;
+                totalCarbs += nutrition.carbs * quantityMultiplier;
+                totalProtein += nutrition.protein * quantityMultiplier;
+                totalFat += nutrition.fat * quantityMultiplier;
+                
+                if (gi) {
+                    avgGI += gi.gi;
+                    giCount++;
+                }
+            });
+            
+            avgGI = giCount > 0 ? Math.round(avgGI / giCount) : 0;
+            
+            const nutritionHtml = `
+                <div class="nutrition-grid">
+                    <div class="nutrition-item">
+                        <div class="nutrition-value">${totalCalories}</div>
+                        <div class="nutrition-label">Calories</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-value">${totalCarbs}g</div>
+                        <div class="nutrition-label">Carbs</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-value">${totalProtein}g</div>
+                        <div class="nutrition-label">Protein</div>
+                    </div>
+                    <div class="nutrition-item">
+                        <div class="nutrition-value">${totalFat}g</div>
+                        <div class="nutrition-label">Fat</div>
+                    </div>
+                </div>
+                ${avgGI > 0 ? `
+                <div class="glycemic-index">
+                    <div>
+                        <strong>Glycemic Index</strong>
+                        <div class="gi-category">${getGICategory(avgGI)}</div>
+                    </div>
+                    <div class="gi-value">${avgGI}</div>
+                </div>
+                ` : ''}
+            `;
+            
+            nutritionContainer.innerHTML = nutritionHtml;
+            nutritionSection.style.display = 'block';
+        }
+        
+        function getNutritionData(food) {
+            const nutrition = {
+                'apple': { calories: 52, carbs: 14, protein: 0.3, fat: 0.2 },
+                'banana': { calories: 89, carbs: 23, protein: 1.1, fat: 0.3 },
+                'rice': { calories: 130, carbs: 28, protein: 2.7, fat: 0.3 },
+                'pizza': { calories: 266, carbs: 33, protein: 11, fat: 10 },
+                'burger': { calories: 354, carbs: 33, protein: 17, fat: 17 },
+                'fries': { calories: 365, carbs: 63, protein: 4, fat: 11 },
+                'chapathi': { calories: 71, carbs: 15, protein: 2, fat: 0.4 },
+                'idli': { calories: 39, carbs: 8, protein: 1.5, fat: 0.1 },
+                'chicken gravy': { calories: 165, carbs: 8, protein: 25, fat: 4 },
+                'soda': { calories: 150, carbs: 39, protein: 0, fat: 0 },
+                'tomato': { calories: 18, carbs: 4, protein: 0.9, fat: 0.2 },
+                'vada': { calories: 140, carbs: 20, protein: 4, fat: 5 }
+            };
+            return nutrition[food] || { calories: 0, carbs: 0, protein: 0, fat: 0 };
+        }
+        
+        function getGICategory(gi) {
+            if (gi <= 55) return 'Low GI';
+            if (gi <= 69) return 'Medium GI';
+            return 'High GI';
+        }
+        
+        function getQuantityMultiplier(food) {
+            // Look for ingredient quantities on the page for this food
+            const ingredientItems = document.querySelectorAll('.ingredient-item');
+            let totalMultiplier = 1;
+            
+            ingredientItems.forEach(item => {
+                const ingredientName = item.querySelector('.ingredient-name').textContent;
+                const quantity = item.querySelector('.ingredient-quantity').textContent;
+                
+                // Check if this ingredient belongs to the current food
+                const foodSection = item.closest('[id^="ingredients-"]');
+                if (foodSection) {
+                    const foodTitle = foodSection.querySelector('h4').textContent.toLowerCase();
+                    if (foodTitle.includes(food.toLowerCase())) {
+                        // Parse quantity and apply multiplier
+                        const quantityValue = parseFloat(quantity);
+                        if (!isNaN(quantityValue)) {
+                            // Apply a proportional multiplier based on quantity
+                            // Assuming base quantity is 1, so multiplier = quantity
+                            totalMultiplier = Math.max(totalMultiplier, quantityValue);
+                        }
+                    }
+                }
+            });
+            
+            return totalMultiplier;
+        }
+        
+        function displayIngredients(ingredientsList) {
+            const ingredientsSection = document.getElementById('ingredientsSection');
+            const ingredientsContainer = document.getElementById('ingredients');
+            
+            const ingredientsHtml = ingredientsList.map((item, foodIndex) => {
+                const ingredients = item.ingredients;
+                return `
+                    <div style="margin-bottom: 1.5rem;">
+                        <h4 style="color: #2c3e50; margin-bottom: 1rem; font-size: 1.1rem;">${item.food} Ingredients</h4>
+                        ${ingredients.map((ingredient, index) => `
+                            <div class="ingredient-item" id="ingredient-${foodIndex}-${index}">
+                                <span class="ingredient-quantity" id="quantity-${foodIndex}-${index}">${ingredient.quantity}</span>
+                                <span class="ingredient-unit">${ingredient.unit}</span>
+                                <span class="ingredient-name">${ingredient.name}</span>
+                                <button class="edit-btn" onclick="editQuantity(${foodIndex}, ${index}, '${item.food}', '${ingredient.name}')">
+                                    ✏️ Edit
+                                </button>
+                                <div class="hidden" id="edit-${foodIndex}-${index}" style="display: none;">
+                                    <input type="text" class="quantity-input" id="new-quantity-${foodIndex}-${index}" value="${ingredient.quantity}" placeholder="Qty">
+                                    <button class="save-btn" onclick="saveQuantity(${foodIndex}, ${index}, '${item.food}', '${ingredient.name}')">Save</button>
+                                    <button class="cancel-btn" onclick="cancelEditQuantity(${foodIndex}, ${index})">Cancel</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }).join('');
+            
+            ingredientsContainer.innerHTML = ingredientsHtml;
+            ingredientsSection.style.display = 'block';
+        }
+        
+        function editQuantity(foodIndex, ingredientIndex, foodName, ingredientName) {
+            const editDiv = document.getElementById(`edit-${foodIndex}-${ingredientIndex}`);
+            const editBtn = event.target;
+            
+            editDiv.style.display = 'flex';
+            editBtn.style.display = 'none';
+        }
+        
+        function saveQuantity(foodIndex, ingredientIndex, foodName, ingredientName) {
+            const newQuantity = document.getElementById(`new-quantity-${foodIndex}-${ingredientIndex}`).value;
+            
+            fetch('/ingredients/quantity', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    food_name: foodName,
+                    ingredient_name: ingredientName,
+                    quantity: newQuantity
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error updating quantity: ' + data.error);
+                } else {
+                    document.getElementById(`quantity-${foodIndex}-${ingredientIndex}`).textContent = newQuantity;
+                    cancelEditQuantity(foodIndex, ingredientIndex);
+                    
+                    // Recalculate nutrition data after quantity change
+                    recalculateNutrition();
+                }
+            })
+            .catch(error => {
+                alert('Error updating quantity: ' + error.message);
+            });
+        }
+        
+        function recalculateNutrition() {
+            // Get all current detections from the page
+            const detectionItems = document.querySelectorAll('.detection-item');
+            const detections = [];
+            
+            detectionItems.forEach(item => {
+                const foodName = item.querySelector('.food-name').textContent;
+                const confidence = parseFloat(item.querySelector('.confidence').textContent.replace('%', '')) / 100;
+                detections.push({
+                    class: foodName,
+                    confidence: confidence
+                });
+            });
+            
+            // Recalculate and display nutrition data
+            if (detections.length > 0) {
+                displayNutritionData(detections);
+            }
+        }
+        
+        function cancelEditQuantity(foodIndex, ingredientIndex) {
+            const editDiv = document.getElementById(`edit-${foodIndex}-${ingredientIndex}`);
+            const editBtn = document.querySelector(`#ingredient-${foodIndex}-${ingredientIndex} .edit-btn`);
+            
+            editDiv.style.display = 'none';
+            editBtn.style.display = 'block';
+        }
+
+        function showError(message) {
+            error.textContent = message;
+            error.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

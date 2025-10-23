@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Upload Test</title>
+</head>
+<body>
+    <h1>Food Detection Test</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="imageInput" name="image" accept="image/*" required>
+        <button type="submit">Detect Food</button>
+    </form>
+    
+    <div id="result"></div>
+    
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const fileInput = document.getElementById('imageInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select an image');
+                return;
+            }
+            
+            formData.append('image', file);
+            
+            try {
+                const response = await fetch('/detect', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('result').innerHTML = '<p style="color: red;">Error: ' + data.error + '</p>';
+                } else {
+                    let resultHtml = '<h3>Detection Results:</h3>';
+                    resultHtml += '<p>Found ' + data.count + ' food items:</p>';
+                    resultHtml += '<ul>';
+                    data.detections.forEach(detection => {
+                        resultHtml += '<li>' + detection.class + ' (confidence: ' + (detection.confidence * 100).toFixed(1) + '%)</li>';
+                    });
+                    resultHtml += '</ul>';
+                    
+                    if (data.annotated_image) {
+                        resultHtml += '<h3>Annotated Image:</h3>';
+                        resultHtml += '<img src="data:image/jpeg;base64,' + data.annotated_image + '" style="max-width: 500px;">';
+                    }
+                    
+                    document.getElementById('result').innerHTML = resultHtml;
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+            }
+        });
+    </script>
+</body>
+</html>
